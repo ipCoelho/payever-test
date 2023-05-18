@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+# ===================================================================
+  payever-api:
+    container_name: payever-api
+    hostname: payever-api
+    image: payever-api:dev
+
+    build:
+      context: .
+      dockerfile: .docker/development.dockerfile
+    volumes:
+      - .:/opt/app
+      - /opt/app/node_modules
+      - ./config:/config
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    working_dir: /opt/app
+    environment:
+      NODE_ENV: development
+      MONGO_URI: mongodb://payever-mongodb:27017/payever-db
+      MABBITMQ_URI: amqp://payever-rabbitmq:5672
+    networks:
+      - payever-api-private-network
+    entrypoint: npm run start:dev
+
+  payever-mongodb:
+    container_name: payever-mongodb
+    hostname: payever-mongodb
+    image: mongo:4.4.10-rc0
+    ports:
+      - 27017:27017
+    networks:
+      - payever-api-private-network
+    logging:
+      driver: none
+
+  payever-rabbitmq:
+    image: rabbitmq
+    hostname: payever-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: payever
+      RABBITMQ_DEFAULT_PASS: payever
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+# ===================================================================
+networks:
+  payever-api-private-network:
+    driver: bridge
